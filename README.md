@@ -1,7 +1,9 @@
-D3-US-Graph
+D3 Voronoi US Graph
 ===========
 
 Voronoi Graph of the United States using just location data from Airports, McDonalds, HAM operators, etc.
+
+<img src="http://i.imgur.com/p72FO2Vl.png" />
 
 
 Known Issues
