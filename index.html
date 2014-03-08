@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Maps</title>
+    <link type="text/css" rel="stylesheet" href="style.css"/>
+    <style type="text/css">
+
+#states path {
+  fill: #ccc;
+  stroke: #fff;
+}
+
+path.cell {
+  fill: none;
+  pointer-events: all;
+  stroke: brown;
+}
+
+circle {
+  fill: black;
+}
+
+    </style>
+  </head>
+  <body>
+    <h2>
+      <span>
+        <select onChange="dataSelect(this.value);">
+	  <option value='airports.csv'>U.S. airports, 2008</option>
+	  <option value='mcdonalds.csv' selected>McDonalds</option>
+	  <option value='starbucks.csv'>Starbucks</option>
+	  <option value='nationalparks.csv'>National Parks</option>
+	  <option value='burgerking.csv'>Burger King</option>
+	  <option value='zipcode.csv'>Zip Codes, 2004</option>
+	  <option value='hamsites-sml.csv'>HAM Sites Sml</option>
+	  <option value='hamsites-med.csv'>HAM Sites Med</option>
+	  <option value='hamsites-lrg.csv'>HAM Sites Lrg</option>
+	  <option value='hamsites.csv'>HAM Sites Xl</option>
+        </select>
+      </span><br>
+      <input type='checkbox' onChange='statesDraw(this.checked);'><label>US Backdrop</label><br>
+      Voronoi diagram
+    </h2>
+    <script type="text/javascript" src="d3/d3.js"></script>
+    <script type="text/javascript" src="d3/d3.csv.js"></script>
+    <script type="text/javascript" src="d3/d3.geo.js"></script>
+    <script type="text/javascript" src="d3/d3.geom.js"></script>
+    <script type="text/javascript">
+
+var w = 1280,
+    h = 800;
+
+var projection = d3.geo.azimuthal()
+    .mode("equidistant")
+    .origin([-98, 38])
+    .scale(1400)
+    .translate([640, 360]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").insert("svg:svg", "h2")
+    .attr("width", w)
+    .attr("height", h);
+
+var states = svg.append("svg:g")
+    .attr("id", "states");
+
+var cells = svg.append("svg:g")
+    .attr("id", "cells");
+
+function statesDraw(flag) {
+  console.log("draw? " + flag);
+  if (!flag) {
+    states.selectAll("path")
+         .remove();
+  } else {
+  d3.json("us-states.json", function(collection) {
+    states.selectAll("path")
+        .data(collection.features)
+      .enter().append("svg:path")
+        .attr("d", path);
+  });
+  }
+}
+
+var lat_mmax = -100000, lat_mmin = 100000;
+var long_mmax = -100000, long_mmin = 100000;
+
+function dataSelect(inp) {
+  d3.csv(inp, function(dataset) {
+    console.log("reached with " + inp); 
+    var positions = [];
+  
+    dataset.forEach(function(point) {
+      /*
+      lat_mmin = Math.min(lat_mmin, point.latitude);
+      lat_mmax = Math.max(lat_mmax, point.latitude);
+      long_mmin = Math.min(long_mmin, point.longitude);
+      long_mmax = Math.max(long_mmax, point.longitude);
+      */
+
+      positions.push(projection([+point.longitude, +point.latitude]));
+    });
+  
+
+    console.log('lat max ' + lat_mmax + ', min ' + lat_mmin);
+    console.log('long max ' + long_mmax + ', min ' + long_mmin);
+
+
+    // Compute the Voronoi diagram of dataset' projected positions.
+    var polygons = d3.geom.voronoi(positions);
+    /*
+    for (var i = polygons.length-1; i >= 0; i--) {
+      var a = polygons[i].join("L");
+      if (a.indexOf("NaN") !== -1)
+        polygons.splice(i, 1);
+    };
+    */
+  
+    var g = cells.selectAll("g")
+        .remove();
+  
+    var g = cells.selectAll("g")
+        .data(dataset)
+      .enter().append("svg:g");
+  
+    g.append("svg:path")
+        .attr("class", "cell")
+        .attr("d", function(d, i) { return "M" + polygons[i].join("L") + "Z"; });
+    /*
+        .on("mouseover", function(d, i) {
+          d3.select("#footer span").text(d.name);
+          d3.select("#footer .hint").text(d.city + ", " + d.state);
+        });
+     */
+    g.append("svg:circle")
+        .attr("cx", function(d, i) { return positions[i][0]; })
+        .attr("cy", function(d, i) { return positions[i][1]; })
+        .attr("r", 1.5);
+  });
+}
+
+dataSelect("mcdonalds.csv");
+
+    </script>
+  </body>
+</html>
